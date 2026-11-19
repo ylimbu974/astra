@@ -1,0 +1,4 @@
+# Pi Registry - pinned on purpose (see Data & Tech Stack Sketch, "Version discipline")
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+SQLAlchemy==2.0.36

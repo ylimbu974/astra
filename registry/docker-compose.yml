@@ -1,0 +1,16 @@
+# Pi Registry (Kanban T-21). `restart: unless-stopped` brings it back after a Pi reboot.
+services:
+  registry:
+    build: .
+    container_name: astra-registry
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: sqlite:////data/registry.db
+    volumes:
+      - ./data:/data
+    # Host networking + binding to the Pi's Tailscale address only, so nothing on the
+    # home LAN or the internet can reach it. If Tailscale is not up yet at boot, uvicorn
+    # exits and Docker retries until the address exists.
+    network_mode: host
+    command: ["sh", "-c", "exec uvicorn registry.main:create_app --factory --host \"$${PI_TAILSCALE_IP}\" --port 8000"]

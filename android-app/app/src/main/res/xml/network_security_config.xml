@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app only ever talks to devices on your tailnet. Tailscale already encrypts every
+  packet (WireGuard), so plain http:// to the Pi and PCs is allowed. If you turn on
+  `tailscale cert` for the Pi and PCs (see the runbook), use https:// addresses and the
+  traffic gets TLS on top.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

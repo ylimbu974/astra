@@ -1,0 +1,78 @@
+:root {
+  --bg: #0d0f13; --card: #181b21; --fg: #e8eaee; --muted: #9aa1ad; --line: #2a2f38;
+  --accent: #4f7cff; --danger: #e5484d; --ok: #3fbf7f;
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; overscroll-behavior: none; }
+[hidden] { display: none !important; }
+button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; }
+
+.screen { position: fixed; inset: 0; }
+.card-screen { display: flex; align-items: center; justify-content: center; padding: 16px; }
+.card { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.card.center { text-align: center; }
+.card h1 { font-size: 22px; margin: 4px 0 8px; word-break: break-word; }
+.card h2 { font-size: 19px; margin: 0 0 8px; }
+.eyebrow { margin: 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); margin: 0 0 16px; }
+.error { color: var(--danger); margin: 8px 0 0; }
+.primary, .secondary { display: block; width: 100%; padding: 13px; margin-top: 12px; font-weight: 600; }
+.primary { background: var(--accent); color: #fff; }
+.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+
+#pin-input {
+  width: 100%; font-size: 30px; letter-spacing: .4em; text-align: center; padding: 12px;
+  background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+}
+
+.spinner {
+  width: 40px; height: 40px; margin: 18px auto; border-radius: 50%;
+  border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* C2 viewer: full bleed, nothing on top except the floating menu button */
+#screen-viewer { background: #000; }
+#stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+#screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; image-rendering: auto; }
+#screen-viewer.frozen #screen { filter: brightness(0.35); }
+
+.fab {
+  position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); width: 46px; height: 46px;
+  border-radius: 50%; background: rgba(24, 27, 33, .72); color: #fff; font-size: 20px;
+  border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(6px);
+}
+
+/* C3 toolbar slides up over C2 */
+.toolbar {
+  position: absolute; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  display: flex; gap: 6px; padding: 8px; background: rgba(24, 27, 33, .92); border: 1px solid var(--line);
+  border-radius: 14px; max-width: calc(100% - 16px); overflow-x: auto; animation: up .18s ease-out;
+}
+@keyframes up { from { transform: translate(-50%, 20px); opacity: 0; } }
+.toolbar button {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; padding: 8px 6px;
+  background: transparent; color: var(--fg); font-size: 12px; white-space: nowrap;
+}
+.toolbar button:active { background: var(--line); }
+.toolbar .ico { font-size: 20px; line-height: 1; }
+.toolbar .danger { color: var(--danger); }
+
+.keys {
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 4px; padding: 6px; overflow-x: auto;
+  background: rgba(24, 27, 33, .95); border-top: 1px solid var(--line);
+}
+.keys button { flex: 0 0 auto; padding: 9px 12px; background: var(--line); color: var(--fg); font-size: 14px; }
+.keys button.on { background: var(--accent); color: #fff; }
+
+#kbd { position: absolute; left: -1000px; top: 0; width: 10px; height: 10px; opacity: 0; }
+
+.toast {
+  position: absolute; left: 50%; top: calc(16px + env(safe-area-inset-top)); transform: translateX(-50%);
+  background: rgba(24, 27, 33, .92); padding: 8px 14px; border-radius: 999px; font-size: 14px; border: 1px solid var(--line);
+}
+
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.overlay .card { background: rgba(24, 27, 33, .95); }

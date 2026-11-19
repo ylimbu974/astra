@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f13">
+  <title>Astra Viewer</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <!-- Browser only: PIN entry (the app sends its paired token instead). -->
+  <section id="screen-pin" class="screen card-screen" hidden>
+    <div class="card">
+      <p class="eyebrow">Astra · web viewer</p>
+      <h1>Connect to <span class="pc-name">this PC</span></h1>
+      <p class="muted">Enter the 6-digit PIN shown in the Host Agent window on the PC. It changes every 10 minutes.</p>
+      <form id="pin-form" autocomplete="off">
+        <input id="pin-input" inputmode="numeric" pattern="\d{6}" maxlength="6" placeholder="••••••" aria-label="PIN">
+        <p id="pin-error" class="error" hidden></p>
+        <button class="primary" type="submit">Connect</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- C1 · Connecting -->
+  <section id="screen-connecting" class="screen card-screen" hidden>
+    <div class="card center">
+      <p class="muted">Connecting to</p>
+      <h1 class="pc-name">PC</h1>
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="connecting-status" class="muted">Reaching the PC…</p>
+      <button id="btn-cancel" class="secondary">Cancel</button>
+    </div>
+  </section>
+
+  <!-- C2 · Viewer / Control (+ C3 toolbar, E5 overlay) -->
+  <section id="screen-viewer" class="screen" hidden>
+    <div id="stage">
+      <canvas id="screen"></canvas>
+    </div>
+    <button id="btn-menu" class="fab" aria-label="Menu">&#9776;</button>
+
+    <div id="toolbar" class="toolbar" hidden>
+      <button data-act="keyboard"><span class="ico">⌨</span>Keyboard</button>
+      <button data-act="mode"><span class="ico">🖱</span><span id="mode-label">Direct</span></button>
+      <button data-act="cad"><span class="ico">⎋</span>Ctrl+Alt+Del</button>
+      <button data-act="zoom"><span class="ico">⤢</span><span id="zoom-label">Fit</span></button>
+      <button data-act="disconnect" class="danger"><span class="ico">⏻</span>Disconnect</button>
+    </div>
+
+    <div id="keys" class="keys" hidden>
+      <button data-mod="ctrl">Ctrl</button><button data-mod="alt">Alt</button><button data-mod="shift">Shift</button>
+      <button data-key="esc">Esc</button><button data-key="tab">Tab</button><button data-key="win">Win</button>
+      <button data-key="left">←</button><button data-key="up">↑</button><button data-key="down">↓</button><button data-key="right">→</button>
+      <button data-key="delete">Del</button><button data-key="hide">Hide ⌄</button>
+    </div>
+    <textarea id="kbd" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Keyboard input"></textarea>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <!-- E5 · Connection lost: the frozen frame stays visible, dimmed -->
+    <div id="lost" class="overlay" hidden>
+      <div class="card center">
+        <h2>Connection lost</h2>
+        <p class="muted">Network changed or the PC went to sleep. Trying to reconnect… (<span id="lost-count">10</span> sec)</p>
+        <button id="btn-lost-reconnect" class="primary">Reconnect now</button>
+        <button id="btn-lost-end" class="secondary">End session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- C4 · Session ended -->
+  <section id="screen-ended" class="screen card-screen" hidden>
+    <div class="card center">
+      <h1 id="ended-title">Disconnected</h1>
+      <p id="ended-detail" class="muted"></p>
+      <button id="btn-reconnect" class="primary">Reconnect</button>
+      <button class="secondary btn-back">Back to devices</button>
+    </div>
+  </section>
+
+  <!-- E4 · Not approved, and other plain-language failures -->
+  <section id="screen-problem" class="screen card-screen" hidden>
+    <div class="card center">
+      <h1 id="problem-title">The PC did not approve</h1>
+      <p id="problem-detail" class="muted">Either Deny was tapped on the PC, or nobody answered within 60 seconds.</p>
+      <button id="btn-try-again" class="primary">Try again</button>
+      <button class="secondary btn-back">Back to devices</button>
+    </div>
+  </section>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

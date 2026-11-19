@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.Astra" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0D0F13</item>
+        <item name="android:navigationBarColor">#0D0F13</item>
+        <item name="android:windowBackground">#0D0F13</item>
+    </style>
+    <style name="Theme.Astra.Viewer" parent="Theme.Astra">
+        <item name="android:windowBackground">#000000</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>
