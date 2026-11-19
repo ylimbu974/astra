@@ -7,8 +7,11 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: sqlite:////data/registry.db
+      WEB_VIEWER_DIR: /web-viewer
     volumes:
       - ./data:/data
+      # The viewer page for phones that share their screen through the Pi (phone to phone).
+      - ../web-viewer:/web-viewer:ro
     # Host networking + binding to the Pi's Tailscale address only, so nothing on the
     # home LAN or the internet can reach it. If Tailscale is not up yet at boot, uvicorn
     # exits and Docker retries until the address exists.

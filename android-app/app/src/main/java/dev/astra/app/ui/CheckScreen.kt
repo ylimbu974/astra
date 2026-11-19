@@ -107,7 +107,7 @@ fun CheckScreen(store: Store, onPassed: () -> Unit) {
             title = { Text("Pi registry address") },
             text = {
                 Column {
-                    Text("Use the Pi's Tailscale name, for example http://pi-server:8000", color = Muted)
+                    Text("Use the Pi's Tailscale name, for example http://yoyopi:8000", color = Muted)
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(text, { text = it }, singleLine = true)
                 }

@@ -5,6 +5,8 @@ There are two ways to run Astra. Pick one.
 * **Pi only (no PC).** The Raspberry Pi is the server **and** the computer you control from the phone,
   like OSLink. Follow **[Pi only](#pi-only-no-windows-pc)** right below and skip §1 to §3.
 * **Pi + Windows PC.** The Pi keeps the device list and you control a Windows PC. Follow §1 to §5.
+* **Phone to phone.** One Android phone controls another through the Pi. Do *Pi only* first (for the registry), then follow
+  **[PHONE-TO-PHONE.md](PHONE-TO-PHONE.md)**.
 
 Throughout this guide, `pi-server` and `desktop-pc` stand for your own device names.
 
@@ -166,9 +168,12 @@ Tap to click, long-press to right-click, two-finger drag to scroll, pinch to zoo
 
 ## 4. Android app (T-26 to T-30)
 
+**Easiest: no Android Studio.** Push the repo to GitHub and the APK builds itself in the **Actions** tab
+(see [PHONE-TO-PHONE.md](PHONE-TO-PHONE.md), steps 2 and 3). The steps below are for building on your own computer.
+
 1. Install a recent **Android Studio** (Ladybug 2024.2 or newer; the project uses AGP 8.7 and Kotlin 2.1).
 2. **File > Open** the `android-app` folder and let Gradle sync. It downloads the wrapper and libraries.
-3. If your Pi isn't called `pi-server`, change `astra.registryUrl` in `android-app/gradle.properties`. You can also change it later in the app by tapping the red "Pi registry" row on the first screen.
+3. The app's default Pi address is `http://yoyopi:8000`. If your Pi has another name, change `astra.registryUrl` in `android-app/gradle.properties`. You can also change it later in the app by tapping the red "Pi registry" row on the first screen.
 4. On the phone, turn on **Developer options > USB debugging**, plug it in, and press **Run**.
    * Or build an APK with **Build > Build App Bundle(s) / APK(s) > Build APK(s)** and copy `app/build/outputs/apk/debug/app-debug.apk` to the phone to install it (direct APK, no Play Store in the MVP).
 5. This code was written without access to the Android SDK, so it has **never been compiled**. If the first build shows errors, they will most likely be small API mismatches. Paste them into this thread and they can be fixed.

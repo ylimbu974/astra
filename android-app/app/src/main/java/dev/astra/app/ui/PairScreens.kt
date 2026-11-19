@@ -72,6 +72,9 @@ fun AddDeviceScreen(onScan: () -> Unit, onManual: () -> Unit, onBack: () -> Unit
     AstraScreen("Add device", onBack = onBack) {
         Spacer(Modifier.height(24.dp))
         Text("On the PC, open the Host Agent. It shows a QR code and a PIN.", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Text("Adding another phone? On that phone open Astra, tap Share this phone and Start sharing. " +
+            "Then choose Enter code manually here and type its name and PIN.", color = Muted)
         Spacer(Modifier.height(24.dp))
         Button(onClick = onScan, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Scan QR code") }
         Spacer(Modifier.height(12.dp))
@@ -79,7 +82,7 @@ fun AddDeviceScreen(onScan: () -> Unit, onManual: () -> Unit, onBack: () -> Unit
             Text("Enter code manually")
         }
         Spacer(Modifier.height(12.dp))
-        Text("Manual path: type the PC name and the PIN shown under its QR code.", color = Muted)
+        Text("Manual path: type the PC or phone name and the PIN it shows.", color = Muted)
     }
 }
 
@@ -133,7 +136,7 @@ fun ScanScreen(onFound: (PairTarget) -> Unit, onTypeInstead: () -> Unit, onBack:
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-private fun QrCamera(onRaw: (String) -> Unit) {
+internal fun QrCamera(onRaw: (String) -> Unit) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -210,11 +213,12 @@ fun PairScreen(
             val t = target ?: run {
                 val wanted = pcName.trim()
                 RegistryApi(s.registryUrl, s.phoneToken).devices().firstOrNull {
-                    it.name.equals(wanted, ignoreCase = true) || it.hostname.substringBefore('.').equals(wanted, ignoreCase = true)
+                    it.name.equals(wanted, ignoreCase = true) ||
+                        (!it.relay && it.hostname.substringBefore('.').equals(wanted, ignoreCase = true))
                 }?.let { PairTarget.fromRegistry(it) }
             }
             if (t == null) {
-                error = "No PC called \"${pcName.trim()}\" is listed on the Pi. Check the name under its QR code."
+                error = "Nothing called \"${pcName.trim()}\" is listed on the Pi. Check the name under its QR code, or on the phone's Share screen."
                 phase = Phase.Entering
                 return@launch
             }
@@ -222,7 +226,7 @@ fun PairScreen(
             val (pairingId, newToken) = RegistryApi(s.registryUrl, s.phoneToken).startPairing(t.deviceId, s.phoneName, pin)
             if (newToken != null) store.setToken(newToken)
             HostApi.pair(t, pairingId, pin, s.phoneName)
-            val device = PairedDevice(t.deviceId, t.name, t.host, t.port, t.scheme)
+            val device = t.toPaired()
             store.savePaired(device)
             phase = Phase.Success(device)
         } catch (e: ApiException) {
@@ -236,6 +240,7 @@ fun PairScreen(
                         "unreachable" -> "Could not reach $name. Check that its Host Agent is running."
                         "unknown_device" -> "That code is not a PC from this app."
                         "pairing_expired" -> "The pairing request expired. Try again."
+                        "host_offline" -> "$name is not sharing right now. On it, open Astra and tap Start sharing."
                         "busy" -> "$name is busy with another prompt or session. Try again in a moment."
                         else -> e.detail.ifBlank { "Pairing failed (${e.code})." }
                     }
@@ -284,10 +289,10 @@ fun PairScreen(
                 if (target != null) {
                     Text("Pairing with ${target!!.name}", style = MaterialTheme.typography.titleLarge)
                 } else {
-                    OutlinedTextField(pcName, { pcName = it }, label = { Text("PC name") }, singleLine = true,
+                    OutlinedTextField(pcName, { pcName = it }, label = { Text("PC or phone name") }, singleLine = true,
                         modifier = Modifier.fillMaxWidth())
                 }
-                Text("Enter the 6-digit PIN shown on the PC. It changes every 10 minutes.", color = Muted)
+                Text("Enter the 6-digit PIN shown on the PC or on the other phone. It changes every 10 minutes.", color = Muted)
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { v -> pin = v.filter(Char::isDigit).take(6) },

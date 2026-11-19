@@ -1,5 +1,6 @@
 package dev.astra.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +24,7 @@ import dev.astra.app.ui.OfflineScreen
 import dev.astra.app.ui.PairScreen
 import dev.astra.app.ui.ScanScreen
 import dev.astra.app.ui.SettingsScreen
+import dev.astra.app.ui.ShareScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -39,11 +41,21 @@ object Routes {
     const val B2 = "b2"
     const val B3 = "b3"
     const val E1 = "e1"
+    const val S1 = "s1" // Share this phone (phone to phone)
 }
 
 class MainActivity : ComponentActivity() {
+    /** Set when a notification (Allow request, sharing) asks to open the Share screen. */
+    private var openShare by mutableStateOf(false)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_SHARE, false)) openShare = true
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        openShare = intent?.getBooleanExtra(EXTRA_OPEN_SHARE, false) == true
         val store = Store(applicationContext)
         setContent {
             AstraTheme {
@@ -71,6 +83,7 @@ class MainActivity : ComponentActivity() {
                             nav.navigate(Routes.A2) { popUpTo(Routes.A1) { inclusive = true } }
                         })
                     }
+                    composable(Routes.S1) { ShareScreen(store, onBack = { nav.popBackStack() }) }
                     composable(Routes.A2) {
                         DevicesScreen(
                             store = store,
@@ -78,7 +91,11 @@ class MainActivity : ComponentActivity() {
                             onOffline = { d, lastSeen -> offlineDevice = d to lastSeen; nav.navigate(Routes.E1) },
                             onAdd = { nav.navigate(Routes.B1) },
                             onSettings = { nav.navigate(Routes.A3) },
+                            onShare = { nav.navigate(Routes.S1) { launchSingleTop = true } },
                         )
+                        androidx.compose.runtime.LaunchedEffect(openShare) {
+                            if (openShare) { openShare = false; nav.navigate(Routes.S1) { launchSingleTop = true } }
+                        }
                     }
                     composable(Routes.A3) { SettingsScreen(store, onBack = { nav.popBackStack() }) }
                     composable(Routes.E1) {
@@ -118,5 +135,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_SHARE = "open_share"
     }
 }

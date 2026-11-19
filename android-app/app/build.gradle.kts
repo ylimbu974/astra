@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val registryUrl = (project.findProperty("astra.registryUrl") as String?) ?: "http://pi-server:8000"
+val registryUrl = (project.findProperty("astra.registryUrl") as String?) ?: "http://yoyopi:8000"
 
 android {
     namespace = "dev.astra.app"
@@ -14,12 +14,27 @@ android {
         applicationId = "dev.astra.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0-mvp"
+        versionCode = 2
+        versionName = "1.1.0-phone"
         buildConfigField("String", "DEFAULT_REGISTRY_URL", "\"$registryUrl\"")
     }
 
+    // One fixed signing key, so a newer APK (from your PC or from GitHub) installs over the
+    // old one and keeps your pairings. It's a debug key for your own phones only; the store
+    // and key password are both "android", like Android Studio's own debug key.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("astra-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             // MVP installs as a direct APK; sign with your own debug or release key.

@@ -22,11 +22,12 @@ def render_device_page(devices: list[dict], now: datetime) -> str:
         rows = []
         for d in devices:
             online = d["status"] == "online"
+            where = f'{d.get("os") or "Android"} phone, through the Pi' if d.get("relay") else d["hostname"]
             link = (f'<a class="open" href="{escape(d["viewer_url"])}">Open viewer</a>'
                     if online else '<span class="muted">&mdash;</span>')
             rows.append(
                 "<tr>"
-                f'<td><strong>{escape(d["name"])}</strong><br><span class="muted">{escape(d["hostname"])}</span></td>'
+                f'<td><strong>{escape(d["name"])}</strong><br><span class="muted">{escape(where)}</span></td>'
                 f'<td><span class="pill {"on" if online else "off"}">{"Online" if online else "Offline"}</span></td>'
                 f'<td>{_ago(d["last_seen_at"], now)}</td>'
                 f"<td>{link}</td>"
@@ -35,8 +36,8 @@ def render_device_page(devices: list[dict], now: datetime) -> str:
         body = ("<table><thead><tr><th>Device</th><th>Status</th><th>Last seen</th><th></th></tr></thead>"
                 f"<tbody>{''.join(rows)}</tbody></table>")
     else:
-        body = ('<p class="empty">No PCs have checked in yet. Start the Host Agent on a PC and it '
-                "appears here within 30 seconds.</p>")
+        body = ('<p class="empty">No devices have checked in yet. Start the Host Agent on a PC, or tap Start sharing '
+                "in the Astra app on a phone, and it appears here within 30 seconds.</p>")
 
     return f"""<!doctype html>
 <html lang="en"><head>

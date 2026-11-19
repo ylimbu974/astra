@@ -1,7 +1,8 @@
 """Astra Pi Registry (Kanban T-18 to T-21).
 
 Two kinds of callers:
-  * Host Agents (the PCs) authenticate with the shared HOST_API_KEY header.
+  * Host Agents (the PCs) authenticate with the shared HOST_API_KEY header. So do Android
+    phones that share their screen; they reach viewers through the relay in relay.py.
   * Phones authenticate with the bearer token they receive when they start a pairing.
     A token alone authorizes nothing: only an *approved* pairing lets that phone
     open a session on that PC, and every session still needs Allow on the PC (P2).
@@ -28,6 +29,7 @@ from .config import Settings, load_settings
 from .models import (AuditLog, Device, Pairing, Phone, SessionRecord, User,
                      make_session_factory, utcnow)
 from .pages import render_device_page
+from .relay import add_relay_routes, is_relay_hostname
 
 PAIRING_TTL = timedelta(minutes=10)  # matches the PIN rotation on the PC
 
@@ -184,13 +186,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise ApiError(401, "bad_token", "This phone is not paired, or its pairing expired. Pair again.")
         return phone
 
-    def device_json(dev: Device, paired_ids: set[int] | None = None) -> dict:
+    def device_json(dev: Device, request: Request, paired_ids: set[int] | None = None) -> dict:
         out = {
             "id": dev.id, "name": dev.name, "hostname": dev.hostname,
             "tailscale_ip": dev.tailscale_ip, "os": dev.os, "status": dev.status,
-            "last_seen_at": iso(dev.last_seen_at), "port": dev.port, "scheme": dev.scheme,
+            "last_seen_at": iso(dev.last_seen_at), "port": dev.port, "scheme": dev.scheme, "path": "",
             "viewer_url": f"{dev.scheme}://{dev.hostname}:{dev.port}/",
+            "relay": False,
         }
+        if is_relay_hostname(dev.hostname):
+            # A phone sharing its screen: viewers reach it through this registry, at the
+            # same address they used to reach the registry.
+            url = request.url
+            port = url.port or (443 if url.scheme == "https" else 80)
+            out.update(hostname=url.hostname, tailscale_ip=None, port=port, scheme=url.scheme,
+                       path=f"/relay/d/{dev.id}", relay=True,
+                       viewer_url=f"{url.scheme}://{url.hostname}:{port}/relay/d/{dev.id}/")
         if paired_ids is not None:
             out["paired"] = dev.id in paired_ids
         return out
@@ -231,7 +242,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"device_id": dev.id, "status": dev.status}
 
     @app.get("/api/devices")
-    def list_devices(authorization: str | None = Header(default=None), db=Depends(get_db)):
+    def list_devices(request: Request, authorization: str | None = Header(default=None), db=Depends(get_db)):
         refresh_statuses(db)
         phone = phone_from_token(db, bearer(authorization))
         paired_ids = None
@@ -239,7 +250,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             paired_ids = set(db.scalars(select(Pairing.device_id).where(
                 Pairing.phone_id == phone.id, Pairing.approved.is_(True))))
         devices = db.scalars(select(Device).order_by(Device.name)).all()
-        return [device_json(d, paired_ids) for d in devices]
+        return [device_json(d, request, paired_ids) for d in devices]
 
     # ---------- pairings (Flow B) ----------
 
@@ -386,9 +397,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # ---------- W1: device registry page (T-20) ----------
 
     @app.get("/", response_class=HTMLResponse)
-    def device_page(db=Depends(get_db)):
+    def device_page(request: Request, db=Depends(get_db)):
         refresh_statuses(db)
-        devices = [device_json(d) for d in db.scalars(select(Device).order_by(Device.name))]
+        devices = [device_json(d, request) for d in db.scalars(select(Device).order_by(Device.name))]
         return HTMLResponse(render_device_page(devices, utcnow()))
 
+    app.state.relay = add_relay_routes(app, settings=settings, session_scope=session_scope,
+                                       owner_id=owner_id, audit=audit)
     return app

@@ -26,6 +26,8 @@ class Settings:
     owner_email: str
     token_ttl_hours: int
     offline_after_seconds: int
+    # The viewer page the Pi serves for Android phones that share their screen (relay.py).
+    web_viewer_dir: str = os.path.join(os.path.dirname(__file__), "..", "..", "web-viewer")
 
 
 def load_settings() -> Settings:
@@ -36,4 +38,6 @@ def load_settings() -> Settings:
         owner_email=os.environ.get("OWNER_EMAIL", "owner@example.com"),
         token_ttl_hours=int(os.environ.get("SESSION_TOKEN_TTL_HOURS", "720")),
         offline_after_seconds=int(os.environ.get("OFFLINE_AFTER_SECONDS", "90")),
+        web_viewer_dir=os.environ.get("WEB_VIEWER_DIR")
+        or os.path.join(os.path.dirname(__file__), "..", "..", "web-viewer"),
     )

@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -65,6 +66,7 @@ fun DevicesScreen(
     onOffline: (PairedDevice, String?) -> Unit,
     onAdd: () -> Unit,
     onSettings: () -> Unit,
+    onShare: () -> Unit,
 ) {
     val settings by store.settings.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
@@ -101,6 +103,8 @@ fun DevicesScreen(
             TopAppBar(
                 title = { Text("My devices") },
                 actions = {
+                    // Phone to phone: let another phone see and control this one.
+                    IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = "Share this phone") }
                     IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = "Settings") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Bg),
@@ -128,8 +132,10 @@ fun DevicesScreen(
                         Box(Modifier.fillMaxWidth().padding(top = 80.dp)) {
                             MessageState(
                                 title = "No devices yet",
-                                body = "Pair your first PC to see it here.\nTip: the PC shows a QR code in its Host Agent window.",
+                                body = "Pair your first PC or phone to see it here.\nTip: the PC shows a QR code in its Host Agent window. " +
+                                    "Another phone shows its name and PIN under Share this phone.",
                                 primary = "Add device" to onAdd,
+                                secondary = "Share this phone instead" to onShare,
                             )
                         }
                     }
@@ -171,7 +177,7 @@ private fun DeviceCard(d: PairedDevice, reg: RegistryDevice?, onConnect: () -> U
         Text(
             when {
                 reg == null -> "Status unknown"
-                online -> "Windows · Online now"
+                online -> "${reg.os ?: if (d.isPhone) "Phone" else "Windows"} · Online now"
                 else -> lastSeenText(reg.lastSeenAt)
             },
             color = Muted,

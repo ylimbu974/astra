@@ -21,6 +21,9 @@ like OSLink: the host agent runs on the Pi's own desktop next to the registry. O
 With a Windows PC, the Pi is never in the video path. It only keeps the device list, pairings and session metadata.
 In the Pi-only setup, the "PC" box above is the Pi itself, so both boxes run on the same Pi.
 
+**Two phones?** One Android phone can see and control another, both in the Astra app, with the Pi in the middle.
+See **[docs/PHONE-TO-PHONE.md](docs/PHONE-TO-PHONE.md)**. The APK builds on GitHub (Actions tab), so no Android Studio is needed.
+
 ## What's in here
 
 | Folder | What it is | Runs on |
@@ -29,6 +32,8 @@ In the Pi-only setup, the "PC" box above is the Pi itself, so both boxes run on 
 | `host-agent/` | Host agent: screen capture, input injection, rotating PIN, QR, approval popup, session banner | Windows PC, or the Pi's desktop (X11) |
 | `web-viewer/` | The viewer page (C1 to C4, E4, E5): touch gestures, keyboard, fit/zoom. Served by the host agent | Phone browser and inside the app |
 | `android-app/` | Kotlin + Jetpack Compose app: A1 to A3, B1 to B4, E1 to E3, WebView wrapper for the viewer | Android phone |
+| `show-phone-key.sh` | Shows the QR a phone scans once to share its screen through the Pi | Raspberry Pi |
+| `.github/workflows/` | Builds the Android APK on GitHub on every push | GitHub |
 | `install-pi.sh` | One-step setup for the Pi-only way: registry + host agent + autostart on the same Pi | Raspberry Pi OS with desktop |
 | `docs/` | [SETUP.md](docs/SETUP.md) (do this first), [RUNBOOK.md](docs/RUNBOOK.md), [SECURITY.md](docs/SECURITY.md) | |
 
@@ -64,6 +69,13 @@ Notes against the Kanban wording:
 * **Tested here:** 12 registry tests and 15 host agent tests, all passing on Python 3.12. They cover pairing through the real registry, wrong PIN and lockout, deny and timeout, cancel, the PC ending a session, a second viewer getting "busy", and the input whitelist. A live run also passed on a virtual Linux display: real registry, real host agent with its Tk window and `mss` capture, and the viewer in a phone-sized Chromium. That run did PIN entry, P2 Allow, a live stream, and a tap on the phone that clicked **End session** on the PC through `pynput`. It ended on "Ended on the PC" and wrote the session row on the Pi.
 * **Pi-only additions, tested here:** 17 host agent tests (on Python 3.11, the version in Raspberry Pi OS Bookworm, and 3.13 for Trixie), plus a live run of `start-host.sh` on a virtual X11 desktop: a PIN session streamed real frames and a phone "move" put the real X11 pointer on the exact pixel. The Wayland check stopped with the switch-to-X11 steps as intended. `install-pi.sh` was run here with `sudo`, Docker and Tailscale stubbed out, to check the `.env` files and autostart entry it writes, and that a second run keeps them.
 * **Not tested here (Pi only):** a real Raspberry Pi. Nothing here could run ARM hardware, Docker on the Pi, or the real Pi OS desktop, so the frame rate on a Pi 4 and the exact raspi-config menu names are unchecked.
+* **Phone to phone, tested here:** 6 relay tests against a real uvicorn server and WebSockets (register, reconnect,
+  pairing passed to the phone, a session piped both ways, offline errors), plus a live run of the viewer in a
+  phone-sized Chromium through the Pi relay against a simulated Android host: PIN, live frames, a tap and the
+  Home/Back buttons all arrived. The new Kotlin phone-host code (`host/`, `data/`) was compiled with the Kotlin
+  compiler against the real Android 15 `android.jar`, OkHttp and coroutines. **Not tested:** the Compose screens
+  and a full Gradle build (Google's Maven server is blocked here), and a real phone. The GitHub Actions build is the
+  first full compile.
 * **Not tested here:** Windows itself (DPI scaling, the Windows firewall, Tailscale detection), the Pi's Docker image on ARM, and the Android app. The build environment couldn't download the Android SDK or Google's Maven libraries, so **the app has never been compiled**. Expect to fix small compile errors on the first Android Studio build.
 
 Run the tests yourself:

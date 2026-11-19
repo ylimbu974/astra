@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Astra</string>
+    <string name="control_service_label">Astra control</string>
+    <string name="control_service_description">Lets a phone you paired with Astra tap, swipe and type on this phone, only while you share this phone from the Astra app and after you allow it. Astra does not read or store what is on your screen.</string>
 </resources>

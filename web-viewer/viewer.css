@@ -76,3 +76,17 @@ button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; }
 
 .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .overlay .card { background: rgba(24, 27, 33, .95); }
+
+/* Android phone host: a nav bar under the picture, like the phone's own */
+.navbar { display: none; }
+body.android .navbar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: calc(52px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom); display: flex; justify-content: space-around; align-items: center;
+  background: #111318; border-top: 1px solid var(--line);
+}
+body.android .navbar button { flex: 1; height: 52px; background: transparent; color: var(--fg); font-size: 22px; }
+body.android .navbar button:active { background: var(--line); }
+body.android #stage { bottom: calc(52px + env(safe-area-inset-bottom)); }
+body.android #btn-menu { display: none; }
+body.android .toolbar { bottom: calc(62px + env(safe-area-inset-bottom)); }
+body.android .keys { bottom: calc(52px + env(safe-area-inset-bottom)); }

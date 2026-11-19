@@ -9,6 +9,10 @@
  *   ?app=1                  running inside the Android app (uses the AstraBridge JS interface)
  *   ?registry=<url>         where "Back to devices" goes in a plain browser (the W1 page)
  *   #token=...&name=...     the app's paired-phone token; kept in the fragment so it never hits server logs
+ *
+ * The same page also runs from the Pi at /relay/d/<id>/ for an Android phone that shares its
+ * screen (phone to phone). All URLs below are relative to the page for that reason. When the
+ * host is a phone, a Back / Home / Recents bar replaces the PC-only buttons.
  */
 (() => {
   "use strict";
@@ -29,6 +33,8 @@
   };
 
   let pcName = "this PC";
+  let hostWord = "the PC";   // "the phone" when the host is an Android phone
+  let isAndroid = false;
   let ws = null;
   let pin = null;
   let state = "idle"; // idle | connecting | waiting | live | closing
@@ -81,14 +87,25 @@
   // ---------------- connection ----------------
 
   function wsUrl() {
-    const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${location.host}/stream`;
+    const u = new URL("stream", location.href); // /stream on a PC, /relay/d/<id>/stream on the Pi
+    u.protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    u.search = u.hash = "";
+    return u.toString();
+  }
+
+  function setPlatform(platform) {
+    isAndroid = platform === "android";
+    hostWord = isAndroid ? "the phone" : "the PC";
+    document.body.classList.toggle("android", isAndroid);
+    // Ctrl+Alt+Del and the trackpad mode mean nothing on a phone.
+    document.querySelectorAll("[data-act=cad], [data-act=mode], #keys [data-key=win]").forEach((b) => (b.hidden = isAndroid));
+    if (isAndroid) cfg.mode = "direct";
   }
 
   function connect() {
     closeSocket();
     show("connecting");
-    $("connecting-status").textContent = "Reaching the PC…";
+    $("connecting-status").textContent = `Reaching ${hostWord}…`;
     state = "connecting";
     const sock = (ws = new WebSocket(wsUrl()));
     sock.binaryType = "blob";
@@ -114,7 +131,9 @@
       ws = null;
       if (state === "live") return connectionLost();
       if (state === "connecting" || state === "waiting") {
-        problem("Could not reach the PC", `${pcName} did not answer. It may be asleep, or its Host Agent stopped.`);
+        problem(`Could not reach ${hostWord}`, isAndroid
+          ? `${pcName} did not answer. Check that Astra on it still says Sharing.`
+          : `${pcName} did not answer. It may be asleep, or its Host Agent stopped.`);
       }
       state = "idle";
     };
@@ -140,24 +159,25 @@
       case "waiting_approval":
         state = "waiting";
         setPcName(msg.name);
-        $("connecting-status").textContent = "Waiting for approval on the PC…";
+        $("connecting-status").textContent = `Waiting for approval on ${hostWord}…`;
         break;
       case "approved":
         state = "live";
         setPcName(msg.name);
+        if (msg.platform) setPlatform(msg.platform);
         sessionStart = sessionStart || Date.now();
         autoRetryUsed = false;
         enterViewer();
         break;
       case "not_approved": // E4
         state = "closing";
-        problem("The PC did not approve",
-          msg.reason === "timeout" ? "Nobody answered on the PC within 60 seconds."
-                                   : "Deny was tapped on the PC, or the popup was closed.");
+        problem(`${isAndroid ? "The phone" : "The PC"} did not approve`,
+          msg.reason === "timeout" ? `Nobody answered on ${hostWord} within 60 seconds.`
+                                   : `Deny was tapped on ${hostWord}, or the prompt was closed.`);
         break;
       case "ended":
         state = "closing";
-        ended(`Ended on the PC`, null);
+        ended(`Ended on ${hostWord}`, null);
         break;
       case "error":
         state = "closing";
@@ -175,7 +195,7 @@
         pin = null;
         show("pin");
         $("pin-error").hidden = false;
-        $("pin-error").textContent = `That PIN did not match. Attempt ${3 - (msg.attempts_left ?? 0)} of 3. Check the PIN on the PC; it changes every 10 minutes.`;
+        $("pin-error").textContent = `That PIN did not match. Attempt ${3 - (msg.attempts_left ?? 0)} of 3. Check the PIN on ${hostWord}; it changes every 10 minutes.`;
         break;
       case "locked":
         pin = null;
@@ -189,6 +209,9 @@
       case "not_paired":
       case "bad_token":
         problem("This phone is not paired", `Pair with ${pcName} again from Add device.`, false);
+        break;
+      case "host_offline":
+        problem(`${pcName} is not sharing`, msg.detail || "Open Astra on that phone and tap Start sharing.");
         break;
       case "registry_unreachable":
         problem("The Pi registry is unreachable", "The PC cannot check this phone's pairing right now. Make sure the Pi is on.");
@@ -596,6 +619,16 @@
     send({ type: "key", key: btn.dataset.key, mods: takeMods() });
   });
 
+  // ---------------- Android hosts: Back / Home / Recents ----------------
+
+  $("navbar").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.nav === "menu") return showToolbar();
+    send({ type: "nav", action: btn.dataset.nav });
+    buzz();
+  });
+
   // ---------------- misc ----------------
 
   async function requestWakeLock() {
@@ -632,8 +665,9 @@
 
   async function start() {
     try {
-      const info = await (await fetch("/api/info", { cache: "no-store" })).json();
+      const info = await (await fetch("api/info", { cache: "no-store" })).json();
       setPcName(info.name);
+      if (info.platform) setPlatform(info.platform);
     } catch { /* name stays generic */ }
     if (cfg.token) connect();
     else { show("pin"); $("pin-input").focus(); }

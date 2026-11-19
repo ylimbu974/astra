@@ -26,6 +26,18 @@ Your home router needs **no** changes. Check it once (T-31): from a phone on mob
 7. **Audit log** on the Pi: registrations, pairing requests, approvals, rejections, PIN failures, sessions.
 8. **No screen content stored**, anywhere. Session rows hold times, reason and a byte count only.
 
+## Phone to phone (Android phone shares its screen through the Pi)
+* The sharing phone dials **out** to the Pi over Tailscale and opens no port of its own. It authenticates with
+  `HOST_API_KEY` (scanned once from `show-phone-key.sh`), like a PC's host agent.
+* The same layers apply: PIN that rotates every 10 minutes with 3 tries, pairing approved on the sharing phone,
+  Allow on that phone for every session unless its owner turns on "Let paired phones in without asking".
+* Unlike a PC session, the picture **passes through the Pi** (`/relay/...` on port 8000). It is only held in memory
+  long enough to forward it and is never written to disk. This is the "self-hosted relay on the Pi" item that the
+  brief had listed for V2; it was pulled forward because a phone can't easily accept incoming connections.
+* Control needs the "Astra control" accessibility service, which the phone's owner must switch on by hand. Android
+  shows a screen-sharing indicator and Astra shows an ongoing notification with **Stop sharing** while it shares.
+* `show-phone-key.sh` prints `HOST_API_KEY`. Treat its QR like a password and don't screenshot or share it.
+
 ## Known limits (accepted for the MVP)
 * `HOST_API_KEY` is one shared secret for all your PCs. Someone who takes it from one PC's `.env` could pretend to be a host to the registry. They still couldn't control any PC without Allow on that PC.
 * The W1 page and `GET /api/devices` are readable by anything on your tailnet (names and online status only). That's what makes the manual pairing path work.

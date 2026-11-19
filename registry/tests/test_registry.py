@@ -156,7 +156,7 @@ def test_bad_phone_token(client):
 
 
 def test_w1_page(client):
-    assert "No PCs have checked in yet" in client.get("/").text
+    assert "No devices have checked in yet" in client.get("/").text
     heartbeat(client, name="WORK-PC", hostname="work-pc")
     heartbeat(client, name="<script>", hostname="evil")
     page = client.get("/").text
